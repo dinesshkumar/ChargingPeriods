@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from flask_cors import CORS
+import re
+
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:123@localhost:5432/ChargingPeriods'
@@ -29,8 +31,15 @@ def create_charging_period():
     start_date = datetime.strptime(data['start_date'], '%Y-%m-%d').date()
     end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
 
+
+    if not re.match(r'^[a-zA-Z0-9_-]{5,10}$', period_code):
+        return jsonify({'error': 'Period code must be 5-10 characters long and can only contain letters, numbers, hyphens, and underscores.'}), 400
+
     if start_date >= end_date:
         return jsonify({'error': 'End date must be greater than start date'}), 400
+
+    if ChargingPeriod.query.filter_by(period_code=period_code).first():
+        return jsonify({'error': 'Period code must be unique.'}), 400
 
     charging_period = ChargingPeriod(
         period_code=period_code,
