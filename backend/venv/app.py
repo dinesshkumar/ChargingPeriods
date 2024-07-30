@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -6,14 +5,11 @@ from datetime import datetime
 from flask_cors import CORS
 import re
 
-
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:123@localhost:5432/ChargingPeriods'
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 CORS(app)
-
-
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers="*", expose_headers="*")
 
 class ChargingPeriod(db.Model):
@@ -35,8 +31,12 @@ def create_charging_period():
     end_date = datetime.strptime(data['end_date'], '%Y-%m-%d').date()
 
 
+
     if not re.match(r'^[a-zA-Z0-9_-]{5,10}$', period_code):
         return jsonify({'error': 'Period code must be 5-10 characters long and can only contain letters, numbers, hyphens, and underscores.'}), 400
+
+    # if not re.match(r'^(?=.*[a-zA-Z])(?=.*\d)(?=.*[-_])[a-zA-Z0-9_-]{5,10}$', period_code):
+    #     return jsonify({'error': 'Period code must be 5-10 characters long and contain at least one letter, one number, one hyphen and one underscore.'}), 400
 
     if start_date >= end_date:
         return jsonify({'error': 'End date must be greater than start date'}), 400
