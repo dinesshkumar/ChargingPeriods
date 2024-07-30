@@ -9,9 +9,12 @@ import re
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:123@localhost:5432/ChargingPeriods'
-CORS(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+CORS(app)
+
+
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True, allow_headers="*", expose_headers="*")
 
 class ChargingPeriod(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -61,6 +64,18 @@ def get_charging_periods():
         'start_date': period.start_date.isoformat(),
         'end_date': period.end_date.isoformat()
     } for period in periods]), 200
+
+
+@app.route('/charging_periods/<int:id>', methods=['DELETE'])
+def delete_charging_period(id):
+    period = ChargingPeriod.query.get(id)
+    if period is None:
+        return jsonify({'error': 'Charging period not found'}), 404
+
+    db.session.delete(period)
+    db.session.commit()
+    return jsonify({'message': 'Charging period deleted successfully'}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)

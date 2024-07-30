@@ -6,7 +6,8 @@ import { format } from 'date-fns';
 const App = () => {
   const [periods, setPeriods] = useState([]);
   const [writeError, setwriteError] = useState('');
-  const [returnMessage, setreturnMessage] = useState('');
+  const [returnMessage, setReturnMessage] = useState('');
+  const [reload, setReload] = useState(false); 
 
   const [form, setForm] = useState({
     period_code: '',
@@ -15,12 +16,30 @@ const App = () => {
     end_date: ''
   });
 
-  useEffect(() => {
-    axios.get('http://localhost:5000/charging_periods').then(response => {
-      setPeriods(response.data);
-    });
-  }, []);
+  const fetchPeriods = async () => {
+    // e.preventDefault();
 
+    try {
+      const response = await axios.get('http://localhost:5000/charging_periods');
+      setPeriods(response.data);
+    } catch (error) {
+      console.error('Failed to fetch periods:', error);
+    }
+};
+
+  useEffect(() => {
+    fetchPeriods();    
+  // }, []);
+},[reload]);
+
+
+useEffect(() => {
+  if (returnMessage) {
+    const timer = setTimeout(() => {
+      setReturnMessage('');
+    }, 5000);
+    return () => clearTimeout(timer);}
+}, [returnMessage]);
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -29,10 +48,10 @@ const App = () => {
   };
 
   const handleSubmit = (e) => {
-    setreturnMessage('');
+    // setreturnMessage('');
     e.preventDefault();
     axios.post('http://localhost:5000/charging_periods', form)
-      .then(response => {
+          .then(response => {
         setPeriods([...periods, response.data]);
         setForm({
           period_code: '',
@@ -40,7 +59,8 @@ const App = () => {
           start_date: '',
           end_date: ''
         });
-        setreturnMessage("Successfully Added."+ form.period_code +response.data.message);
+        setReturnMessage(response.data.message);
+        setReload(!reload);
       })
       .catch(error => {
         console.error(error);
@@ -48,30 +68,53 @@ const App = () => {
 
         setwriteError(error.response.data.error);
       });
+      fetchPeriods();    
+
   };
+  const handleDelete = (id) => {
+    // e.preventDefault();
+    // console.log("incise handle delte")
+    axios.delete(`http://localhost:5000/charging_periods/${id}`)
+
+      .then(response => {
+        setReload(!reload);
+      })
+      .catch(error => {
+        console.error(error)  ;
+
+      });
+      fetchPeriods();    
+
+  };
+
 
   return (
     <div class="container">
       <h1>Charging Periods</h1>
       <form onSubmit={handleSubmit}>
-        <div class="col-md-6">
+      <div className="row mb-3">
+        <div class="col-md-3">
           <label class="form-label">Period Code:</label>
           <input class="form-control" type="text" name="period_code" value={form.period_code} onChange={handleChange} required />
         </div>
-        <div class="col-md-6">
+        <div class="col-md-9">
           <label class="form-label">Period Label:</label>
           <input class="form-control" type="text" name="period_label" value={form.period_label} onChange={handleChange} />
         </div>
-        <div>
+        </div>
+
+        <div className="row mb-3">
+        <div class="col-md-3">
           <label class="form-label">Start Date:</label>
           <input class="form-control" type="date" name="start_date" value={form.start_date} onChange={handleChange} required />
         </div>
-        <div>
+        <div class="col-md-3">
           <label class="form-label">End Date:</label>
           <input class="form-control" type="date" name="end_date" value={form.end_date} onChange={handleChange} required />
         </div>
+        </div>
 
-        <button class="w-10 btn btn-primary btn-lg" type="submit">Add Charging Period</button>
+        <button class="btn btn-primary" type="submit" >Add Charging Period</button>
         {writeError}{returnMessage}
       </form>
       <h2>Existing Charging Periods</h2>
@@ -83,6 +126,9 @@ const App = () => {
       <th scope="col">Period Label</th>
       <th scope="col">Start Date</th>
       <th scope="col">End_date</th>
+      {/* <th scope="col">Edit</th> */}
+      <th scope="col">Delete</th>
+
     </tr>
   </thead>
         {periods.map(period => (
@@ -91,8 +137,11 @@ const App = () => {
            <tr key={period.id}>
              <td>{period.period_code}</td>
              <td>{period.period_label}</td>
-             <td>{format(new Date(period.start_date), 'dd-MMM-yyyy')}</td>
-             <td>{format(new Date(period.end_date), 'dd-MMM-yyyy')}</td>
+             <td>{period.start_date}</td>
+             <td>{period.end_date}</td>
+             {/* <td>{format(new Date(period.start_date), 'dd-MMM-yyyy')}</td>
+             <td>{format(new Date(period.end_date), 'dd-MMM-yyyy')}</td> */}
+             <td><button className="btn btn-link text-danger" onClick={() => handleDelete(period.id)}>delete</button></td>
            </tr>
 
         ))}
