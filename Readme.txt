@@ -44,7 +44,7 @@ The frontend will start on `http://localhost:3000`.
 
 ----------------------------------------------------------------------------------------------------
 
-## Design
+## Development Notes
 
 - My understading of the "Period Code" field in the db model should be 5-10 characters and only allow upper case, lower case, numeric hyphen and underscore.
 If the use case is that the "Period Code" field must be 5-10 characters long and must contain at least one letter, one number, one hyphen and one underscore,  line 35,36 should be commented and line 38,39 should be uncommented.
